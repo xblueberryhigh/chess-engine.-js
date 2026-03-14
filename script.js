@@ -108,7 +108,7 @@ function handleSquareClick(event) {
   }
 
   // Try move only if legal
-  if (!isValidMove(fromRow, fromCol, row, col)) {
+  if (!isLegalMove(fromRow, fromCol, row, col)) {
     return;
   }
 
@@ -119,7 +119,6 @@ function handleSquareClick(event) {
   isKingInCheck(currentPlayer);
   renderBoard();
 }
-
 
 function score(fromRow, fromCol, toRow, toCol){
 
@@ -135,7 +134,6 @@ function score(fromRow, fromCol, toRow, toCol){
 
   console.log(`White: ${whiteScore} | Black: ${blackScore}`);
 }
-
 
 function isCapture(fromRow, fromCol, toRow, toCol) {
   const piece = board[fromRow][fromCol];
@@ -159,7 +157,7 @@ function getLegalMoves(fromRow, fromCol){
 
   for (let row = 0; row < 8; row++) {
     for (let col = 0; col < 8; col++) {
-      if (isValidMove(fromRow, fromCol, row, col)) {
+      if (isLegalMove(fromRow, fromCol, row, col)) {
         legalMoves.push({ row, col });
       }
     }
@@ -192,8 +190,7 @@ function isKingInCheck(color) {
       const piece = board[row][col];
 
       if (getPieceColor(piece) === opponent) {
-        if (isValidMove(row, col, kingPos.row, kingPos.col)) {
-          console.log("Check!");
+        if (isPseudoLegalMove(row, col, kingPos.row, kingPos.col)) {
           return true;
         }
       }
@@ -203,7 +200,7 @@ function isKingInCheck(color) {
   return false;
 }
 
-function isValidMove(fromRow, fromCol, toRow, toCol) {
+function isPseudoLegalMove(fromRow, fromCol, toRow, toCol) {
   const piece = board[fromRow][fromCol];
   const movingPieceColor = getPieceColor(piece);
   const targetPiece = board[toRow][toCol];
@@ -239,6 +236,31 @@ function isValidMove(fromRow, fromCol, toRow, toCol) {
     default:
       return false;
   }
+}
+
+function isLegalMove(fromRow, fromCol, toRow, toCol) {
+  const piece = board[fromRow][fromCol];
+  const movingColor = getPieceColor(piece);
+
+  if (!isPseudoLegalMove(fromRow, fromCol, toRow, toCol)){
+    return false;
+  }
+
+  //save board state
+  const capturedPiece = board[toRow][toCol];
+
+  //Make temporary move
+  board[toRow][toCol] = piece;
+  board[fromRow][fromCol] = "";
+
+  const kingInCheck = isKingInCheck(movingColor);
+
+  //undo move
+
+  board[fromRow][fromCol] = piece;
+  board[toRow][toCol] = capturedPiece;
+
+  return !kingInCheck;
 }
 
 function isValidPawnMove(fromRow, fromCol, toRow, toCol) {

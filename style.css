@@ -8,15 +8,15 @@ body {
 }
 
 #chessboard {
-  width: 640px;   /* 👈 change this */
-  height: 640px;  /* 👈 and this to resize the whole board */
+  width: 640px;   
+  height: 640px;  
 
   display: grid;
-  grid-template-columns: repeat(8, 1fr); /* 8 equal columns */
-  grid-template-rows: repeat(8, 1fr);    /* 8 equal rows */
+  grid-template-columns: repeat(8, 1fr); 
+  grid-template-rows: repeat(8, 1fr);    
 
-  border-radius: 20px;   /* round corners */
-  overflow: hidden;      /* keep squares inside the round shape */
+  border-radius: 20px;  
+  overflow: hidden;      
   
 }
 
@@ -24,10 +24,10 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 52px;    /* make pieces bigger */
+  font-size: 52px;    
   user-select: none;
   cursor: pointer;
-  box-sizing: border-box; /* important so border fits inside */
+  box-sizing: border-box; 
 }
 
 .light {
@@ -54,7 +54,7 @@ body {
   width: 30px;
   height: 30px;
 
-  background: rgba(93, 93, 93, 0.256); /* transparent green */
+  background: rgba(93, 93, 93, 0.256); 
   border-radius: 50%;
 
   top: 50%;
