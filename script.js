@@ -70,6 +70,7 @@ function renderBoard() {
     }
   }
 }
+
 function handleSquareClick(event) {
   const square = event.currentTarget;
 
@@ -118,6 +119,41 @@ function handleSquareClick(event) {
   switchPlayer();
   isKingInCheck(currentPlayer);
   renderBoard();
+
+  if (isCheckmate(currentPlayer)) {
+  console.log(`Checkmate! ${currentPlayer} loses.`);
+} else if (isStalemate(currentPlayer)) {
+  console.log("Stalemate!");
+}
+
+}
+
+function hasAnyLegalMoves(color) {
+  for (let fromRow = 0; fromRow < 8; fromRow++) {
+    for (let fromCol = 0; fromCol < 8; fromCol++) {
+      const piece = board[fromRow][fromCol];
+
+      if (getPieceColor(piece) !== color) continue;
+
+      for (let toRow = 0; toRow < 8; toRow++) {
+        for (let toCol = 0; toCol < 8; toCol++) {
+          if (isLegalMove(fromRow, fromCol, toRow, toCol)) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+function isCheckmate(color) {
+  return isKingInCheck(color) && !hasAnyLegalMoves(color);
+}
+
+function isStalemate(color) {
+  return !isKingInCheck(color) && !hasAnyLegalMoves(color);
 }
 
 function score(fromRow, fromCol, toRow, toCol){
