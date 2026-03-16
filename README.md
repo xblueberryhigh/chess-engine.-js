@@ -13,11 +13,16 @@ The project focuses on the logic behind chess mechanics such as legal move gener
   - `isPseudoLegalMove()` for piece movement rules
   - `isLegalMove()` which simulates the move and ensures the king is not left in check
 - Checkmate detection (and stalemate)
+- Improved move validation (separate attack detection from move validation) with isSquareAttacked(row, col, byColor)
+- Castling got integrated
+- Cleaner structure and functions seperation
+
 
 ## Roadmap / Next Steps
 
-- Further improving move validation (separate attack detection from move validation) with isSquareAttacked(row, col, byColor)
-- Integrating special rules such as en passant, pawn promotion and castling
+- Better kings being adjacent checking
+- isLegalMove mutates the real board - can become unstable later. Better clone the board.
+- Integrating more special rules such as en passant, pawn promotion
 - Better scoring when captures
 - Move history
 - UI improvements

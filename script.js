@@ -1,3 +1,6 @@
+// ====================
+// GAME STATE
+// ====================
 let board = [
   ["♜","♞","♝","♛","♚","♝","♞","♜"],
   ["♟","♟","♟","♟","♟","♟","♟","♟"],
@@ -18,12 +21,22 @@ let currentPlayer = "white";
 let whiteScore= 0;
 let blackScore=0;
 
+let castlingRights = {
+  whiteKingSide: true,
+  whiteQueenSide: true,
+  blackKingSide: true,
+  blackQueenSide: true
+};
+
+
+// ====================
+// RENDERING / UI
+// ====================
 function renderBoard() {
   chessboard.innerHTML = "";
 
   const whiteInCheck = isKingInCheck("white");
   const blackInCheck = isKingInCheck("black");
-
   const whiteKingPos = findKing("white");
   const blackKingPos = findKing("black");
 
@@ -70,7 +83,6 @@ function renderBoard() {
     }
   }
 }
-
 function handleSquareClick(event) {
   const square = event.currentTarget;
 
@@ -113,21 +125,98 @@ function handleSquareClick(event) {
     return;
   }
 
-  score(fromRow, fromCol, row, col);
-  movePiece(fromRow, fromCol, row, col);
+  playMove(fromRow, fromCol, row, col);
+}
+
+
+// ====================
+// TURN FLOW
+// ====================
+function playMove(fromRow, fromCol, toRow, toCol){
+  score(fromRow, fromCol, toRow, toCol);
+  updateCastlingRights(fromRow, fromCol, toRow, toCol);
+  movePiece(fromRow, fromCol, toRow, toCol);
+
   clearSelection();
   switchPlayer();
-  isKingInCheck(currentPlayer);
   renderBoard();
 
   if (isCheckmate(currentPlayer)) {
-  console.log(`Checkmate! ${currentPlayer} loses.`);
-} else if (isStalemate(currentPlayer)) {
-  console.log("Stalemate!");
+    console.log(`Checkmate! ${currentPlayer} loses.`);
+  } else if (isStalemate(currentPlayer)) {
+    console.log("Stalemate!");
+  }
+}
+function movePiece(fromRow, fromCol, toRow, toCol) {
+  const piece = board[fromRow][fromCol];
+
+  // Castling
+  if (isCastlingMove(fromRow, fromCol, toRow, toCol)) {
+    board[toRow][toCol] = piece;
+    board[fromRow][fromCol] = "";
+
+    // King side
+    if (toCol === 6) {
+      board[toRow][5] = board[toRow][7];
+      board[toRow][7] = "";
+    }
+
+    // Queen side
+    if (toCol === 2) {
+      board[toRow][3] = board[toRow][0];
+      board[toRow][0] = "";
+    }
+
+    return;
+  }
+
+  // Normal move
+  board[toRow][toCol] = piece;
+  board[fromRow][fromCol] = "";
+}
+function switchPlayer() {
+  currentPlayer = currentPlayer === "white" ? "black" : "white";
 }
 
+
+// ====================
+// SELECTION HELPERS
+// ====================
+function selectSquare(row, col) {
+  selectedSquare = { row, col };
+  legalMoves = getLegalMoves(row, col);
+}
+function clearSelection() {
+  selectedSquare = null;
+  legalMoves = [];
+}
+function isSelectedSquare(row, col) {
+  return (
+    selectedSquare !== null &&
+    selectedSquare.row === row &&
+    selectedSquare.col === col
+  );
+}
+function isLegalMoveSquare(row, col){
+  return legalMoves.some(move => move.row === row && move.col === col);
+}
+function getLegalMoves(fromRow, fromCol){
+  const legalMoves = [];
+
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      if (isLegalMove(fromRow, fromCol, row, col)) {
+        legalMoves.push({ row, col });
+      }
+    }
+  }
+
+  return legalMoves;
 }
 
+// ====================
+// GAME-END LOGIC
+// ====================
 function hasAnyLegalMoves(color) {
   for (let fromRow = 0; fromRow < 8; fromRow++) {
     for (let fromCol = 0; fromCol < 8; fromCol++) {
@@ -147,15 +236,17 @@ function hasAnyLegalMoves(color) {
 
   return false;
 }
-
 function isCheckmate(color) {
   return isKingInCheck(color) && !hasAnyLegalMoves(color);
 }
-
 function isStalemate(color) {
   return !isKingInCheck(color) && !hasAnyLegalMoves(color);
 }
 
+
+// ====================
+// SCORING / CAPTURE
+// ====================
 function score(fromRow, fromCol, toRow, toCol){
 
   if (!isCapture(fromRow, fromCol, toRow, toCol)) return;
@@ -170,7 +261,6 @@ function score(fromRow, fromCol, toRow, toCol){
 
   console.log(`White: ${whiteScore} | Black: ${blackScore}`);
 }
-
 function isCapture(fromRow, fromCol, toRow, toCol) {
   const piece = board[fromRow][fromCol];
   const movingPieceColor = getPieceColor(piece);
@@ -188,24 +278,9 @@ function isCapture(fromRow, fromCol, toRow, toCol) {
   return true;
 }
 
-function getLegalMoves(fromRow, fromCol){
-  const legalMoves = [];
-
-  for (let row = 0; row < 8; row++) {
-    for (let col = 0; col < 8; col++) {
-      if (isLegalMove(fromRow, fromCol, row, col)) {
-        legalMoves.push({ row, col });
-      }
-    }
-  }
-
-  return legalMoves;
-}
-
-function isLegalMoveSquare(row, col){
-  return legalMoves.some(move => move.row === row && move.col === col);
-}
-
+// ====================
+// CHECK / ATTACK LOGIC
+// ====================
 function findKing(color) {
   const king = color === "white" ? "♔" : "♚";
   for (let row = 0; row < 8; row++) {
@@ -216,26 +291,190 @@ function findKing(color) {
     }
   }
 }
-
 function isKingInCheck(color) {
   const kingPos = findKing(color);
   const opponent = color === "white" ? "black" : "white";
 
-  for (let row = 0; row < 8; row++) {
-    for (let col = 0; col < 8; col++) {
+  return isSquareAttacked(kingPos.row, kingPos.col, opponent);
+}
+function isSquareAttacked(targetRow, targetCol, byColor){
+  for(let row=0; row<8; row++){
+    for(let col=0; col<8; col++){
       const piece = board[row][col];
 
-      if (getPieceColor(piece) === opponent) {
-        if (isPseudoLegalMove(row, col, kingPos.row, kingPos.col)) {
-          return true;
-        }
+      if(getPieceColor(piece) !== byColor) continue;
+
+      if (doesPieceAttackSquare(row, col, targetRow, targetCol)){
+        return true;
       }
+    }
+  }
+  return false;
+}
+function doesPieceAttackSquare(fromRow, fromCol, toRow, toCol) {
+  const piece = board[fromRow][fromCol];
+
+  if (piece === "") return false;
+  if (fromRow === toRow && fromCol === toCol) return false;
+
+  switch (piece) {
+    case "♙":
+      return toRow === fromRow - 1 && Math.abs(toCol - fromCol) === 1;
+
+    case "♟":
+      return toRow === fromRow + 1 && Math.abs(toCol - fromCol) === 1;
+
+    case "♖":
+    case "♜":
+      return isStraightMove(fromRow, fromCol, toRow, toCol) &&
+             isPathClear(fromRow, fromCol, toRow, toCol);
+
+    case "♗":
+    case "♝":
+      return isDiagonalMove(fromRow, fromCol, toRow, toCol) &&
+             isPathClear(fromRow, fromCol, toRow, toCol);
+
+    case "♕":
+    case "♛":
+      return (
+        (isStraightMove(fromRow, fromCol, toRow, toCol) ||
+         isDiagonalMove(fromRow, fromCol, toRow, toCol)) &&
+        isPathClear(fromRow, fromCol, toRow, toCol)
+      );
+
+    case "♘":
+    case "♞":
+      return isValidKnightMove(fromRow, fromCol, toRow, toCol);
+
+    case "♔":
+    case "♚":
+      return Math.abs(toRow - fromRow) <= 1 && Math.abs(toCol - fromCol) <= 1;
+
+    default:
+      return false;
+  }
+}
+
+// ====================
+// CASTLING LOGIC
+// ====================
+function updateCastlingRights(fromRow, fromCol, toRow, toCol) {
+  const piece = board[fromRow][fromCol];
+  const capturedPiece = board[toRow][toCol];
+
+  // King moved
+  if (piece === "♔") {
+    castlingRights.whiteKingSide = false;
+    castlingRights.whiteQueenSide = false;
+  }
+
+  if (piece === "♚") {
+    castlingRights.blackKingSide = false;
+    castlingRights.blackQueenSide = false;
+  }
+
+  // White rooks moved
+  if (piece === "♖" && fromRow === 7 && fromCol === 0) {
+    castlingRights.whiteQueenSide = false;
+  }
+
+  if (piece === "♖" && fromRow === 7 && fromCol === 7) {
+    castlingRights.whiteKingSide = false;
+  }
+
+  // Black rooks moved
+  if (piece === "♜" && fromRow === 0 && fromCol === 0) {
+    castlingRights.blackQueenSide = false;
+  }
+
+  if (piece === "♜" && fromRow === 0 && fromCol === 7) {
+    castlingRights.blackKingSide = false;
+  }
+
+  // If a rook gets captured on its original square
+  if (capturedPiece === "♖" && toRow === 7 && toCol === 0) {
+    castlingRights.whiteQueenSide = false;
+  }
+
+  if (capturedPiece === "♖" && toRow === 7 && toCol === 7) {
+    castlingRights.whiteKingSide = false;
+  }
+
+  if (capturedPiece === "♜" && toRow === 0 && toCol === 0) {
+    castlingRights.blackQueenSide = false;
+  }
+
+  if (capturedPiece === "♜" && toRow === 0 && toCol === 7) {
+    castlingRights.blackKingSide = false;
+  }
+}
+function isCastlingMove(fromRow, fromCol, toRow, toCol){
+  const piece = board[fromRow][fromCol];
+
+  if (piece !== "♔" && piece !== "♚") return false;
+
+  return fromRow === toRow && Math.abs(toCol - fromCol) ===2;
+}
+function isValidCastlingMove(fromRow, fromCol, toRow, toCol) {
+  const piece = board[fromRow][fromCol];
+
+  // White king
+  if (piece === "♔" && fromRow === 7 && fromCol === 4) {
+    // King side: e1 -> g1
+    if (toRow === 7 && toCol === 6) {
+      if (!castlingRights.whiteKingSide) return false;
+      if (board[7][5] !== "" || board[7][6] !== "") return false;
+      if (board[7][7] !== "♖") return false;
+      if (isKingInCheck("white")) return false;
+      if (isSquareAttacked(7, 5, "black")) return false;
+      if (isSquareAttacked(7, 6, "black")) return false;
+      return true;
+    }
+
+    // Queen side: e1 -> c1
+    if (toRow === 7 && toCol === 2) {
+      if (!castlingRights.whiteQueenSide) return false;
+      if (board[7][1] !== "" || board[7][2] !== "" || board[7][3] !== "") return false;
+      if (board[7][0] !== "♖") return false;
+      if (isKingInCheck("white")) return false;
+      if (isSquareAttacked(7, 3, "black")) return false;
+      if (isSquareAttacked(7, 2, "black")) return false;
+      return true;
+    }
+  }
+
+  // Black king
+  if (piece === "♚" && fromRow === 0 && fromCol === 4) {
+    // King side: e8 -> g8
+    if (toRow === 0 && toCol === 6) {
+      if (!castlingRights.blackKingSide) return false;
+      if (board[0][5] !== "" || board[0][6] !== "") return false;
+      if (board[0][7] !== "♜") return false;
+      if (isKingInCheck("black")) return false;
+      if (isSquareAttacked(0, 5, "white")) return false;
+      if (isSquareAttacked(0, 6, "white")) return false;
+      return true;
+    }
+
+    // Queen side: e8 -> c8
+    if (toRow === 0 && toCol === 2) {
+      if (!castlingRights.blackQueenSide) return false;
+      if (board[0][1] !== "" || board[0][2] !== "" || board[0][3] !== "") return false;
+      if (board[0][0] !== "♜") return false;
+      if (isKingInCheck("black")) return false;
+      if (isSquareAttacked(0, 3, "white")) return false;
+      if (isSquareAttacked(0, 2, "white")) return false;
+      return true;
     }
   }
 
   return false;
 }
 
+
+// ====================
+// MOVE VALIDATION
+// ====================
 function isPseudoLegalMove(fromRow, fromCol, toRow, toCol) {
   const piece = board[fromRow][fromCol];
   const movingPieceColor = getPieceColor(piece);
@@ -273,25 +512,52 @@ function isPseudoLegalMove(fromRow, fromCol, toRow, toCol) {
       return false;
   }
 }
-
 function isLegalMove(fromRow, fromCol, toRow, toCol) {
   const piece = board[fromRow][fromCol];
   const movingColor = getPieceColor(piece);
 
-  if (!isPseudoLegalMove(fromRow, fromCol, toRow, toCol)){
+  if (!isPseudoLegalMove(fromRow, fromCol, toRow, toCol)) {
     return false;
   }
 
-  //save board state
+  // Save board state
   const capturedPiece = board[toRow][toCol];
 
-  //Make temporary move
+  // Special simulation for castling
+  if (isCastlingMove(fromRow, fromCol, toRow, toCol)) {
+    board[toRow][toCol] = piece;
+    board[fromRow][fromCol] = "";
+
+    if (toCol === 6) {
+      board[toRow][5] = board[toRow][7];
+      board[toRow][7] = "";
+    } else if (toCol === 2) {
+      board[toRow][3] = board[toRow][0];
+      board[toRow][0] = "";
+    }
+
+    const kingInCheck = isKingInCheck(movingColor);
+
+    // Undo castling simulation
+    board[fromRow][fromCol] = piece;
+    board[toRow][toCol] = capturedPiece;
+
+    if (toCol === 6) {
+      board[toRow][7] = board[toRow][5];
+      board[toRow][5] = "";
+    } else if (toCol === 2) {
+      board[toRow][0] = board[toRow][3];
+      board[toRow][3] = "";
+    }
+
+    return !kingInCheck;
+  }
+
+  // Normal move simulation
   board[toRow][toCol] = piece;
   board[fromRow][fromCol] = "";
 
   const kingInCheck = isKingInCheck(movingColor);
-
-  //undo move
 
   board[fromRow][fromCol] = piece;
   board[toRow][toCol] = capturedPiece;
@@ -299,6 +565,9 @@ function isLegalMove(fromRow, fromCol, toRow, toCol) {
   return !kingInCheck;
 }
 
+// ====================
+// PIECE MOVEMENT RULES
+// ====================
 function isValidPawnMove(fromRow, fromCol, toRow, toCol) {
   const piece = board[fromRow][fromCol];
   const color = getPieceColor(piece);
@@ -367,7 +636,6 @@ function isValidPawnMove(fromRow, fromCol, toRow, toCol) {
 
   return false;
 }
-
 function isValidRookMove(fromRow, fromCol, toRow, toCol) {
   if (!isStraightMove(fromRow, fromCol, toRow, toCol)) {
     return false;
@@ -375,7 +643,6 @@ function isValidRookMove(fromRow, fromCol, toRow, toCol) {
 
   return isPathClear(fromRow, fromCol, toRow, toCol);
 }
-
 function isValidBishopMove(fromRow, fromCol, toRow, toCol) {
   if (!isDiagonalMove(fromRow, fromCol, toRow, toCol)) {
     return false;
@@ -383,7 +650,6 @@ function isValidBishopMove(fromRow, fromCol, toRow, toCol) {
 
   return isPathClear(fromRow, fromCol, toRow, toCol);
 }
-
 function isValidQueenMove(fromRow, fromCol, toRow, toCol) {
   if (
     isStraightMove(fromRow, fromCol, toRow, toCol) ||
@@ -394,7 +660,6 @@ function isValidQueenMove(fromRow, fromCol, toRow, toCol) {
 
   return false;
 }
-
 function isValidKnightMove(fromRow, fromCol, toRow, toCol) {
   const rowDiff = Math.abs(toRow - fromRow);
   const colDiff = Math.abs(toCol - fromCol);
@@ -404,22 +669,30 @@ function isValidKnightMove(fromRow, fromCol, toRow, toCol) {
     (rowDiff === 1 && colDiff === 2)
   );
 }
-
 function isValidKingMove(fromRow, fromCol, toRow, toCol) {
   const rowDiff = Math.abs(toRow - fromRow);
   const colDiff = Math.abs(toCol - fromCol);
 
-  return rowDiff <= 1 && colDiff <= 1;
+  if (rowDiff <= 1 && colDiff <= 1) {
+    return true;
+  }
+
+  if (isValidCastlingMove(fromRow, fromCol, toRow, toCol)) {
+    return true;
+  }
+
+  return false;
 }
 
+// ====================
+// GENERIC BOARD HELPERS
+// ====================
 function isStraightMove(fromRow, fromCol, toRow, toCol) {
   return fromRow === toRow || fromCol === toCol;
 }
-
 function isDiagonalMove(fromRow, fromCol, toRow, toCol) {
   return Math.abs(toRow - fromRow) === Math.abs(toCol - fromCol);
 }
-
 function isPathClear(fromRow, fromCol, toRow, toCol) {
   const rowStep = Math.sign(toRow - fromRow);
   const colStep = Math.sign(toCol - fromCol);
@@ -438,35 +711,6 @@ function isPathClear(fromRow, fromCol, toRow, toCol) {
 
   return true;
 }
-
-function movePiece(fromRow, fromCol, toRow, toCol) {
-  const piece = board[fromRow][fromCol];
-  board[toRow][toCol] = piece;
-  board[fromRow][fromCol] = "";
-}
-
-function selectSquare(row, col) {
-  selectedSquare = { row, col };
-  legalMoves = getLegalMoves(row, col);
-}
-
-function clearSelection() {
-  selectedSquare = null;
-  legalMoves = [];
-}
-
-function isSelectedSquare(row, col) {
-  return (
-    selectedSquare !== null &&
-    selectedSquare.row === row &&
-    selectedSquare.col === col
-  );
-}
-
-function switchPlayer() {
-  currentPlayer = currentPlayer === "white" ? "black" : "white";
-}
-
 function getPieceColor(piece) {
   if (piece === "") return null;
 
@@ -478,8 +722,5 @@ function getPieceColor(piece) {
 
   return null;
 }
-
-
-
 
 renderBoard();
