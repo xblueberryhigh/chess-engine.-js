@@ -18,8 +18,10 @@ let selectedSquare = null;
 let legalMoves = [];
 let currentPlayer = "white";
 
-let whiteScore= 0;
-let blackScore=0;
+let evalScore = 0;
+
+let whiteCaptured = [];
+let blackCaptured = [];
 
 let castlingRights = {
   whiteKingSide: true,
@@ -151,28 +153,14 @@ function movePiece(fromRow, fromCol, toRow, toCol) {
   const piece = board[fromRow][fromCol];
 
   // Castling
-  if (isCastlingMove(fromRow, fromCol, toRow, toCol)) {
-    board[toRow][toCol] = piece;
-    board[fromRow][fromCol] = "";
-
-    // King side
-    if (toCol === 6) {
-      board[toRow][5] = board[toRow][7];
-      board[toRow][7] = "";
-    }
-
-    // Queen side
-    if (toCol === 2) {
-      board[toRow][3] = board[toRow][0];
-      board[toRow][0] = "";
-    }
-
-    return;
-  }
+  doCastle(fromRow, fromCol, toRow, toCol);
 
   // Normal move
   board[toRow][toCol] = piece;
   board[fromRow][fromCol] = "";
+
+  //if promotion
+  handlePromotion(toRow, toCol);
 }
 function switchPlayer() {
   currentPlayer = currentPlayer === "white" ? "black" : "white";
@@ -247,19 +235,53 @@ function isStalemate(color) {
 // ====================
 // SCORING / CAPTURE
 // ====================
-function score(fromRow, fromCol, toRow, toCol){
-
+function score(fromRow, fromCol, toRow, toCol) {
   if (!isCapture(fromRow, fromCol, toRow, toCol)) return;
 
   const movingPieceColor = getPieceColor(board[fromRow][fromCol]);
+  const capturedPiece = board[toRow][toCol]; // ← actual piece
+  const capturedPieceValue = getPieceValue(toRow, toCol);
 
-  if (movingPieceColor === "white"){
-    whiteScore++;
+  // Store captured piece
+  if (movingPieceColor === "white") {
+    whiteCaptured.push(capturedPiece);
   } else {
-    blackScore++;
+    blackCaptured.push(capturedPiece);
   }
 
-  console.log(`White: ${whiteScore} | Black: ${blackScore}`);
+  // eval system
+  if (movingPieceColor === "white") {
+    evalScore += capturedPieceValue;
+  } else {
+    evalScore -= capturedPieceValue;
+  }
+
+  console.log(`Eval: ${evalScore}`);
+  console.log("White captured:", whiteCaptured);
+  console.log("Black captured:", blackCaptured);
+}
+function getPieceValue(toRow, toCol){
+  capturedPiece = board[toRow][toCol];
+  
+  switch (capturedPiece) {
+    case "♙":
+    case "♟":
+      return 1;
+    case "♖":
+    case "♜":
+      return 5;
+    case "♘":
+    case "♞":
+    case "♗":
+    case "♝":
+      return 3;
+    case "♕":
+    case "♛":
+      return 9;
+    default:
+      return 0;
+  }
+
 }
 function isCapture(fromRow, fromCol, toRow, toCol) {
   const piece = board[fromRow][fromCol];
@@ -470,6 +492,28 @@ function isValidCastlingMove(fromRow, fromCol, toRow, toCol) {
 
   return false;
 }
+function doCastle(fromRow, fromCol, toRow, toCol){
+
+  const piece = board[fromRow][fromCol];
+  if (isCastlingMove(fromRow, fromCol, toRow, toCol)) {
+    board[toRow][toCol] = piece;
+    board[fromRow][fromCol] = "";
+
+    // King side
+    if (toCol === 6) {
+      board[toRow][5] = board[toRow][7];
+      board[toRow][7] = "";
+    }
+
+    // Queen side
+    if (toCol === 2) {
+      board[toRow][3] = board[toRow][0];
+      board[toRow][0] = "";
+    }
+
+    return;
+  }
+}
 
 
 // ====================
@@ -563,6 +607,17 @@ function isLegalMove(fromRow, fromCol, toRow, toCol) {
   board[toRow][toCol] = capturedPiece;
 
   return !kingInCheck;
+}
+function handlePromotion(row, col) {
+  const piece = board[row][col];
+
+  if (piece === "♙" && row === 0) {
+    board[row][col] = "♕"; // white promotes
+  }
+
+  if (piece === "♟" && row === 7) {
+    board[row][col] = "♛"; // black promotes
+  }
 }
 
 // ====================
@@ -723,4 +778,7 @@ function getPieceColor(piece) {
   return null;
 }
 
+// ====================
+// START GAME
+// ====================
 renderBoard();

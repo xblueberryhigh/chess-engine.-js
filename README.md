@@ -9,21 +9,19 @@ The project focuses on the logic behind chess mechanics such as legal move gener
 - Interactive chessboard
 - Legal move validation
 - Check detection
-- Refactored move validation into two layers:
-  - `isPseudoLegalMove()` for piece movement rules
-  - `isLegalMove()` which simulates the move and ensures the king is not left in check
 - Checkmate detection (and stalemate)
 - Improved move validation (separate attack detection from move validation) with isSquareAttacked(row, col, byColor)
 - Castling got integrated
 - Cleaner structure and functions seperation
+- Accurate piece value and evalScore integrated, which captured pieces tracking (For UI later).
+- Pawn promotion got integrated
 
 
 ## Roadmap / Next Steps
 
 - Better kings being adjacent checking
 - isLegalMove mutates the real board - can become unstable later. Better clone the board.
-- Integrating more special rules such as en passant, pawn promotion
-- Better scoring when captures
+- Integrating en passant
 - Move history
 - UI improvements
 - Refactoring the game logic
@@ -58,5 +56,46 @@ This separation simplifies rule validation and avoids recursive dependencies whe
 ### Checkmate/Stalemate detection
 
 - Added full game-state evaluation using `hasAnyLegalMoves()`, enabling checkmate and stalemate detection.
+
+### Dedicated attack detection (`isSquareAttacked`)
+
+Originally, check detection relied on the same logic used for move validation.  
+To determine if a king was in check, the engine attempted to reuse piece move validation functions to see if an opponent piece could move to the king’s square.
+
+This approach created architectural problems:
+
+- Move validation (`isLegalMove`) already depends on check detection.
+- Check detection attempted to reuse move validation logic.
+- This created **tight coupling and risk of circular dependencies**.
+
+To solve this, attack detection was separated from move validation.
+
+A new function was introduced:
+
+- `isSquareAttacked(row, col, byColor)`
+
+This function iterates over all pieces of the attacking side and determines whether any of them attack the target square.
+
+Attack logic is evaluated through a dedicated helper:
+
+- `doesPieceAttackSquare()`
+
+This function evaluates **attack patterns only**, without applying full move legality rules such as:
+
+- self-check prevention
+- turn logic
+- special move constraints
+
+This separation allows the engine to:
+
+- evaluate checks safely
+- simplify move validation
+- avoid recursive dependencies between rule systems
+
+The result is a clearer architecture where:
+
+- `isPseudoLegalMove()` handles **movement rules**
+- `isSquareAttacked()` handles **threat detection**
+- `isLegalMove()` combines both to enforce full chess rules
 
 
