@@ -17,6 +17,7 @@ The project focuses on the logic behind chess mechanics such as legal move gener
 - Pawn promotion got integrated
 - Enhanced material balance and score integrating 'computeMaterial()' rather than incrementally computing the material balance
 - En passant got integrated (FULL CHESS RULES INTEGRATED !)
+- Big refactor into different files
 
 
 ## Roadmap / Next Steps
@@ -25,7 +26,6 @@ The project focuses on the logic behind chess mechanics such as legal move gener
 - isLegalMove mutates the real board - can become unstable later. Better clone the board.
 - Move history
 - UI improvements
-- Refactoring the game logic
 - Better handling of static values (const)
 
 ## Tech
