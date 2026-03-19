@@ -16,16 +16,17 @@ The project focuses on the logic behind chess mechanics such as legal move gener
 - Accurate piece value and evalScore integrated, which captured pieces tracking (For UI later).
 - Pawn promotion got integrated
 - Enhanced material balance and score integrating 'computeMaterial()' rather than incrementally computing the material balance
+- En passant got integrated (FULL CHESS RULES INTEGRATED !)
 
 
 ## Roadmap / Next Steps
 
 - Better kings being adjacent checking
 - isLegalMove mutates the real board - can become unstable later. Better clone the board.
-- Integrating en passant
 - Move history
 - UI improvements
 - Refactoring the game logic
+- Better handling of static values (const)
 
 ## Tech
 

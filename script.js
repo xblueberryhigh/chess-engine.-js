@@ -23,6 +23,8 @@ let evalScore = computeMaterial();
 let whiteCaptured = [];
 let blackCaptured = [];
 
+let enPassantTarget = null;
+
 let castlingRights = {
   whiteKingSide: true,
   whiteQueenSide: true,
@@ -138,6 +140,7 @@ function playMove(fromRow, fromCol, toRow, toCol){
   
   updateCastlingRights(fromRow, fromCol, toRow, toCol);
   movePiece(fromRow, fromCol, toRow, toCol);
+  updateEnPassantState(fromRow, fromCol, toRow, toCol);
   evalScore = computeMaterial();
   console.log(evalScore);
 
@@ -161,6 +164,22 @@ function movePiece(fromRow, fromCol, toRow, toCol) {
     return;
   }
 
+  //En passant
+  if (isEnPassantMove(fromRow, fromCol, toRow, toCol)) {
+    const capturedPawn = board[enPassantTarget.captureRow][enPassantTarget.captureCol];
+
+    if (capturedPawn !== "") {
+      storeCapturedPiece(movingPieceColor, capturedPawn);
+    }
+
+    board[toRow][toCol] = piece;
+    board[fromRow][fromCol] = "";
+    board[enPassantTarget.captureRow][enPassantTarget.captureCol] = "";
+
+    handlePromotion(toRow, toCol);
+    return;
+  }
+  // Normal capture
   if (targetPiece !== "") {
     storeCapturedPiece(movingPieceColor, targetPiece);
   }
@@ -590,6 +609,22 @@ function isLegalMove(fromRow, fromCol, toRow, toCol) {
 
     return !kingInCheck;
   }
+  // Special simulation for en passant
+  if (isEnPassantMove(fromRow, fromCol, toRow, toCol)) {
+    const epCapturedPiece = board[enPassantTarget.captureRow][enPassantTarget.captureCol];
+
+    board[toRow][toCol] = piece;
+    board[fromRow][fromCol] = "";
+    board[enPassantTarget.captureRow][enPassantTarget.captureCol] = "";
+
+    const kingInCheck = isKingInCheck(movingColor);
+
+    board[fromRow][fromCol] = piece;
+    board[toRow][toCol] = capturedPiece;
+    board[enPassantTarget.captureRow][enPassantTarget.captureCol] = epCapturedPiece;
+
+    return !kingInCheck;
+  }
 
   // Normal move simulation
   board[toRow][toCol] = piece;
@@ -654,6 +689,14 @@ function isValidPawnMove(fromRow, fromCol, toRow, toCol) {
       return true;
     }
 
+     if (
+      Math.abs(colDiff) === 1 &&
+      rowDiff === -1 &&
+      isEnPassantMove(fromRow, fromCol, toRow, toCol)
+    ) {
+      return true;
+    }
+
   }
 
   if (color === "black") {
@@ -677,6 +720,14 @@ function isValidPawnMove(fromRow, fromCol, toRow, toCol) {
       rowDiff === 1 &&
       targetPiece !== "" &&
       getPieceColor(targetPiece) === "white"
+    ) {
+      return true;
+    }
+
+    if (
+      Math.abs(colDiff) === 1 &&
+      rowDiff === 1 &&
+      isEnPassantMove(fromRow, fromCol, toRow, toCol)
     ) {
       return true;
     }
@@ -770,6 +821,45 @@ function getPieceColor(piece) {
   if (blackPieces.includes(piece)) return "black";
 
   return null;
+}
+function isEnPassantMove(fromRow, fromCol, toRow, toCol) {
+  const piece = board[fromRow][fromCol];
+  if (piece !== "♙" && piece !== "♟") return false;
+  if (!enPassantTarget) return false;
+
+  return (
+    enPassantTarget.row === toRow &&
+    enPassantTarget.col === toCol &&
+    Math.abs(toCol - fromCol) === 1 &&
+    board[toRow][toCol] === ""
+  );
+}
+function updateEnPassantState(fromRow, fromCol, toRow, toCol){
+  const piece = board[toRow][toCol];
+  enPassantTarget = null;
+
+  //White pawn double-step
+  // White pawn double-step
+  if (piece === "♙" && fromRow === 6 && toRow === 4 && fromCol === toCol) {
+    enPassantTarget = {
+      row: 5,
+      col: fromCol,
+      captureRow: 4,
+      captureCol: fromCol,
+      vulnerableColor: "white"
+    };
+  }
+
+  // Black pawn double-step
+  if (piece === "♟" && fromRow === 1 && toRow === 3 && fromCol === toCol) {
+    enPassantTarget = {
+      row: 2,
+      col: fromCol,
+      captureRow: 3,
+      captureCol: fromCol,
+      vulnerableColor: "black"
+    };
+  }
 }
 
 // ====================
