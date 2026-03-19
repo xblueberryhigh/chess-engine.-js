@@ -15,6 +15,7 @@ The project focuses on the logic behind chess mechanics such as legal move gener
 - Cleaner structure and functions seperation
 - Accurate piece value and evalScore integrated, which captured pieces tracking (For UI later).
 - Pawn promotion got integrated
+- Enhanced material balance and score integrating 'computeMaterial()' rather than incrementally computing the material balance
 
 
 ## Roadmap / Next Steps

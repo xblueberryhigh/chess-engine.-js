@@ -18,7 +18,7 @@ let selectedSquare = null;
 let legalMoves = [];
 let currentPlayer = "white";
 
-let evalScore = 0;
+let evalScore = computeMaterial();
 
 let whiteCaptured = [];
 let blackCaptured = [];
@@ -135,9 +135,11 @@ function handleSquareClick(event) {
 // TURN FLOW
 // ====================
 function playMove(fromRow, fromCol, toRow, toCol){
-  score(fromRow, fromCol, toRow, toCol);
+  
   updateCastlingRights(fromRow, fromCol, toRow, toCol);
   movePiece(fromRow, fromCol, toRow, toCol);
+  evalScore = computeMaterial();
+  console.log(evalScore);
 
   clearSelection();
   switchPlayer();
@@ -151,15 +153,21 @@ function playMove(fromRow, fromCol, toRow, toCol){
 }
 function movePiece(fromRow, fromCol, toRow, toCol) {
   const piece = board[fromRow][fromCol];
+  const movingPieceColor = getPieceColor(piece);
+  const targetPiece = board[toRow][toCol];
 
-  // Castling
-  doCastle(fromRow, fromCol, toRow, toCol);
+  if (isCastlingMove(fromRow, fromCol, toRow, toCol)) {
+    doCastle(fromRow, fromCol, toRow, toCol);
+    return;
+  }
 
-  // Normal move
+  if (targetPiece !== "") {
+    storeCapturedPiece(movingPieceColor, targetPiece);
+  }
+
   board[toRow][toCol] = piece;
   board[fromRow][fromCol] = "";
 
-  //if promotion
   handlePromotion(toRow, toCol);
 }
 function switchPlayer() {
@@ -235,35 +243,16 @@ function isStalemate(color) {
 // ====================
 // SCORING / CAPTURE
 // ====================
-function score(fromRow, fromCol, toRow, toCol) {
-  if (!isCapture(fromRow, fromCol, toRow, toCol)) return;
-
-  const movingPieceColor = getPieceColor(board[fromRow][fromCol]);
-  const capturedPiece = board[toRow][toCol]; // ← actual piece
-  const capturedPieceValue = getPieceValue(toRow, toCol);
-
-  // Store captured piece
+function storeCapturedPiece(movingPieceColor, targetPiece) {
   if (movingPieceColor === "white") {
-    whiteCaptured.push(capturedPiece);
+    whiteCaptured.push(targetPiece);
   } else {
-    blackCaptured.push(capturedPiece);
+    blackCaptured.push(targetPiece);
   }
-
-  // eval system
-  if (movingPieceColor === "white") {
-    evalScore += capturedPieceValue;
-  } else {
-    evalScore -= capturedPieceValue;
-  }
-
-  console.log(`Eval: ${evalScore}`);
-  console.log("White captured:", whiteCaptured);
-  console.log("Black captured:", blackCaptured);
 }
-function getPieceValue(toRow, toCol){
-  capturedPiece = board[toRow][toCol];
+function getPieceValue(piece){
   
-  switch (capturedPiece) {
+  switch (piece) {
     case "♙":
     case "♟":
       return 1;
@@ -283,21 +272,26 @@ function getPieceValue(toRow, toCol){
   }
 
 }
-function isCapture(fromRow, fromCol, toRow, toCol) {
-  const piece = board[fromRow][fromCol];
-  const movingPieceColor = getPieceColor(piece);
-  const targetPiece = board[toRow][toCol];
-  const targetColor = getPieceColor(targetPiece);
+function computeMaterial() {
+  let score = 0;
 
-  if (targetPiece === "") {
-    return false;
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const piece = board[row][col];
+      if (piece === "") continue; 
+
+      const value = getPieceValue(piece);
+      const color = getPieceColor(piece);
+
+      if (color === "white") { 
+        score += value;
+      } else {
+        score -= value;
+      }
+    }
   }
 
-  if (movingPieceColor === targetColor) {
-    return false;
-  }
-
-  return true;
+  return score;
 }
 
 // ====================
