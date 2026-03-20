@@ -2,6 +2,8 @@
 
 // MOVE
 function playMove(fromRow, fromCol, toRow, toCol) {
+  saveGameState();
+  clearRedoHistory();
   updateCastlingRights(fromRow, fromCol, toRow, toCol);
   movePiece(fromRow, fromCol, toRow, toCol);
   updateEnPassantState(fromRow, fromCol, toRow, toCol);
@@ -98,4 +100,76 @@ function selectSquare(row, col) {
 function clearSelection() {
   selectedSquare = null;
   legalMoves = [];
+}
+
+
+// Undo/Redo
+function createGameStateSnapshot() {
+  return {
+    board: board.map(row => [...row]),
+    castlingRights: { ...castlingRights },
+    enPassantTarget: enPassantTarget ? { ...enPassantTarget } : null,
+    whiteCaptured: [...whiteCaptured],
+    blackCaptured: [...blackCaptured],
+    currentPlayer,
+    evalScore
+  };
+}
+
+function saveGameState(){
+  moveHistory.push(createGameStateSnapshot());
+}
+
+function restoreGameState(previousState) {
+  for (let row = 0; row < BOARD_SIZE; row++) {
+    for (let col = 0; col < BOARD_SIZE; col++) {
+      board[row][col] = previousState.board[row][col];
+    }
+  }
+
+  castlingRights.whiteKingSide = previousState.castlingRights.whiteKingSide;
+  castlingRights.whiteQueenSide = previousState.castlingRights.whiteQueenSide;
+  castlingRights.blackKingSide = previousState.castlingRights.blackKingSide;
+  castlingRights.blackQueenSide = previousState.castlingRights.blackQueenSide;
+
+  enPassantTarget = previousState.enPassantTarget;
+  currentPlayer = previousState.currentPlayer;
+  evalScore = previousState.evalScore;
+
+  whiteCaptured.length = 0;
+  whiteCaptured.push(...previousState.whiteCaptured);
+
+  blackCaptured.length = 0;
+  blackCaptured.push(...previousState.blackCaptured);
+}
+
+function undoMove() {
+  const previousState = moveHistory.pop();
+
+  if (!previousState) {
+    return;
+  }
+
+  redoHistory.push(createGameStateSnapshot());
+
+  restoreGameState(previousState);
+  clearSelection();
+  renderBoard();
+}
+
+function redoMove() {
+  const nextState = redoHistory.pop();
+
+  if (!nextState) {
+    return;
+  }
+
+  moveHistory.push(createGameStateSnapshot());
+
+  restoreGameState(nextState);
+  clearSelection();
+  renderBoard();
+}
+function clearRedoHistory(){
+  redoHistory.length = 0;
 }

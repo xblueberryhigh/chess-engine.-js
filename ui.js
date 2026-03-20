@@ -3,6 +3,13 @@ const chessboard = document.getElementById("chessboard");
 const whiteScoreDisplay = document.getElementById("white-score-display");
 const blackScoreDisplay = document.getElementById("black-score-display");
 
+const undoButton = document.getElementById("undo-button");
+const redoButton = document.getElementById("redo-button");
+
+undoButton.addEventListener("click", undoMove);
+redoButton.addEventListener("click", redoMove);
+
+
 // RENDERING
 function renderBoard() {
   chessboard.innerHTML = "";

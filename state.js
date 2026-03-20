@@ -100,6 +100,9 @@ const board = createInitialBoard();
 const whiteCaptured = [];
 const blackCaptured = [];
 
+const moveHistory = [];
+const redoHistory = [];
+
 const castlingRights = {
   whiteKingSide: true,
   whiteQueenSide: true,
