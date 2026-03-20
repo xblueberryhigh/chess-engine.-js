@@ -18,13 +18,13 @@ The project focuses on the logic behind chess mechanics such as legal move gener
 - Enhanced material balance and score integrating 'computeMaterial()' rather than incrementally computing the material balance
 - En passant got integrated (FULL CHESS RULES INTEGRATED !)
 - Big refactor into different files
+- Undo/Redo 
 
 
 ## Roadmap / Next Steps
 
 - Better kings being adjacent checking
 - isLegalMove mutates the real board - can become unstable later. Better clone the board.
-- Move history
 - UI improvements
 
 ## Tech
