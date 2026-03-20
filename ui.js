@@ -1,5 +1,7 @@
 // Display
 const chessboard = document.getElementById("chessboard");
+const whiteScoreDisplay = document.getElementById("white-score-display");
+const blackScoreDisplay = document.getElementById("black-score-display");
 
 // RENDERING
 function renderBoard() {
@@ -50,6 +52,20 @@ function renderBoard() {
       chessboard.appendChild(square);
     }
   }
+  updateScoreDisplay();
+}
+
+function updateScoreDisplay() {
+  whiteScoreDisplay.textContent = getWhiteScoreDisplayText();
+  blackScoreDisplay.textContent = getBlackScoreDisplayText();
+}
+
+function getWhiteScoreDisplayText() {
+  return whiteCaptured.join("") + (evalScore > 0 ? ` +${evalScore}` : "");
+}
+
+function getBlackScoreDisplayText() {
+  return blackCaptured.join("") + (evalScore < 0 ? ` +${Math.abs(evalScore)}` : "");
 }
 
 function isSelectedSquare(row, col) {

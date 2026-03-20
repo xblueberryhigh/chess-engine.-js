@@ -4,7 +4,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #000000;
+  background: #eeeed2;
 }
 
 #chessboard {
@@ -15,9 +15,18 @@ body {
   grid-template-columns: repeat(8, 1fr); 
   grid-template-rows: repeat(8, 1fr);    
 
-  border-radius: 20px;  
+  /* border-radius: 20px;   */
   overflow: hidden;      
-  
+  border: 5px solid rgb(0, 0, 0);
+  box-sizing: border-box;
+
+}
+
+#game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 
 .square {
@@ -65,4 +74,8 @@ body {
 .check-king {
   border: 3px solid rgb(193, 5, 5);
   box-sizing: border-box;
+}
+
+.score-display {
+  font-size: 30px;
 }

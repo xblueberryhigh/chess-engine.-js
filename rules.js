@@ -100,6 +100,7 @@ function getLegalMoves(fromRow, fromCol) {
 
   return moves;
 }
+
 // CHECK / ATTACK 
 function getKingPosition(color) {
   const king = KINGS[color];
@@ -178,6 +179,7 @@ function doesPieceAttackSquare(fromRow, fromCol, toRow, toCol) {
       return false;
   }
 }
+
 //GAME-END 
 function hasAnyLegalMoves(color) {
   for (let fromRow = 0; fromRow < BOARD_SIZE; fromRow++) {
