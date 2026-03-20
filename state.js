@@ -1,30 +1,114 @@
-//Memory
+const BOARD_SIZE = 8;
 
-let board = [
-  ["♜","♞","♝","♛","♚","♝","♞","♜"],
-  ["♟","♟","♟","♟","♟","♟","♟","♟"],
-  ["","","","","","","",""],
-  ["","","","","","","",""],
-  ["","","","","","","",""],
-  ["","","","","","","",""],
-  ["♙","♙","♙","♙","♙","♙","♙","♙"],
-  ["♖","♘","♗","♕","♔","♗","♘","♖"],
-];
+const EMPTY_SQUARE = "";
 
-let selectedSquare = null;
-let legalMoves = [];
-let currentPlayer = "white";
+const PLAYERS = {
+  WHITE: "white",
+  BLACK: "black"
+};
 
-let evalScore = computeMaterial();
+const ROWS = {
+  BLACK_BACK_RANK: 0,
+  BLACK_PAWN_START: 1,
+  WHITE_PAWN_START: 6,
+  WHITE_BACK_RANK: 7,
+  WHITE_PROMOTION: 0,
+  BLACK_PROMOTION: 7
+};
 
-let whiteCaptured = [];
-let blackCaptured = [];
+const COLS = {
+  KING_START: 4,
+  KING_SIDE_CASTLE: 6,
+  QUEEN_SIDE_CASTLE: 2,
+  KING_SIDE_ROOK_FROM: 7,
+  KING_SIDE_ROOK_TO: 5,
+  QUEEN_SIDE_ROOK_FROM: 0,
+  QUEEN_SIDE_ROOK_TO: 3,
+  QUEEN_SIDE_BETWEEN_1: 1
+};
 
-let enPassantTarget = null;
+const PAWN_FORWARD = {
+  [PLAYERS.WHITE]: -1,
+  [PLAYERS.BLACK]: 1
+};
 
-let castlingRights = {
+const PAWN_START_ROW = {
+  [PLAYERS.WHITE]: ROWS.WHITE_PAWN_START,
+  [PLAYERS.BLACK]: ROWS.BLACK_PAWN_START
+};
+
+const PROMOTION_ROW = {
+  [PLAYERS.WHITE]: ROWS.WHITE_PROMOTION,
+  [PLAYERS.BLACK]: ROWS.BLACK_PROMOTION
+};
+
+const PIECES = {
+  WHITE: {
+    PAWN: "♙",
+    ROOK: "♖",
+    KNIGHT: "♘",
+    BISHOP: "♗",
+    QUEEN: "♕",
+    KING: "♔"
+  },
+  BLACK: {
+    PAWN: "♟",
+    ROOK: "♜",
+    KNIGHT: "♞",
+    BISHOP: "♝",
+    QUEEN: "♛",
+    KING: "♚"
+  }
+};
+
+const WHITE_PIECES = Object.values(PIECES.WHITE);
+const BLACK_PIECES = Object.values(PIECES.BLACK);
+
+const PIECE_VALUES = {
+  [PIECES.WHITE.PAWN]: 1,
+  [PIECES.BLACK.PAWN]: 1,
+  [PIECES.WHITE.ROOK]: 5,
+  [PIECES.BLACK.ROOK]: 5,
+  [PIECES.WHITE.KNIGHT]: 3,
+  [PIECES.BLACK.KNIGHT]: 3,
+  [PIECES.WHITE.BISHOP]: 3,
+  [PIECES.BLACK.BISHOP]: 3,
+  [PIECES.WHITE.QUEEN]: 9,
+  [PIECES.BLACK.QUEEN]: 9
+};
+
+const KINGS = {
+  [PLAYERS.WHITE]: PIECES.WHITE.KING,
+  [PLAYERS.BLACK]: PIECES.BLACK.KING
+};
+
+function createInitialBoard() {
+  return [
+    [PIECES.BLACK.ROOK, PIECES.BLACK.KNIGHT, PIECES.BLACK.BISHOP, PIECES.BLACK.QUEEN, PIECES.BLACK.KING, PIECES.BLACK.BISHOP, PIECES.BLACK.KNIGHT, PIECES.BLACK.ROOK],
+    [PIECES.BLACK.PAWN, PIECES.BLACK.PAWN, PIECES.BLACK.PAWN, PIECES.BLACK.PAWN, PIECES.BLACK.PAWN, PIECES.BLACK.PAWN, PIECES.BLACK.PAWN, PIECES.BLACK.PAWN],
+    [EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE],
+    [EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE],
+    [EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE],
+    [EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE],
+    [PIECES.WHITE.PAWN, PIECES.WHITE.PAWN, PIECES.WHITE.PAWN, PIECES.WHITE.PAWN, PIECES.WHITE.PAWN, PIECES.WHITE.PAWN, PIECES.WHITE.PAWN, PIECES.WHITE.PAWN],
+    [PIECES.WHITE.ROOK, PIECES.WHITE.KNIGHT, PIECES.WHITE.BISHOP, PIECES.WHITE.QUEEN, PIECES.WHITE.KING, PIECES.WHITE.BISHOP, PIECES.WHITE.KNIGHT, PIECES.WHITE.ROOK],
+  ];
+}
+
+const board = createInitialBoard();
+
+const whiteCaptured = [];
+const blackCaptured = [];
+
+const castlingRights = {
   whiteKingSide: true,
   whiteQueenSide: true,
   blackKingSide: true,
   blackQueenSide: true
 };
+
+let selectedSquare = null;
+let legalMoves = [];
+let currentPlayer = PLAYERS.WHITE;
+let evalScore = 0;
+let enPassantTarget = null;

@@ -26,7 +26,6 @@ The project focuses on the logic behind chess mechanics such as legal move gener
 - isLegalMove mutates the real board - can become unstable later. Better clone the board.
 - Move history
 - UI improvements
-- Better handling of static values (const)
 
 ## Tech
 

@@ -1,18 +1,17 @@
-//Display
+// Display
 const chessboard = document.getElementById("chessboard");
 
-
-//RENDERING
+// RENDERING
 function renderBoard() {
   chessboard.innerHTML = "";
 
-  const whiteInCheck = isKingInCheck("white");
-  const blackInCheck = isKingInCheck("black");
-  const whiteKingPos = findKing("white");
-  const blackKingPos = findKing("black");
+  const whiteInCheck = isKingInCheck(PLAYERS.WHITE);
+  const blackInCheck = isKingInCheck(PLAYERS.BLACK);
+  const whiteKingPos = getKingPosition(PLAYERS.WHITE);
+  const blackKingPos = getKingPosition(PLAYERS.BLACK);
 
-  for (let row = 0; row < 8; row++) {
-    for (let col = 0; col < 8; col++) {
+  for (let row = 0; row < BOARD_SIZE; row++) {
+    for (let col = 0; col < BOARD_SIZE; col++) {
       const square = document.createElement("div");
       square.classList.add("square");
 
@@ -31,21 +30,19 @@ function renderBoard() {
         square.classList.add("legal-move");
       }
 
-      if (
+      const isWhiteCheckedKing =
         whiteInCheck &&
         whiteKingPos &&
         whiteKingPos.row === row &&
-        whiteKingPos.col === col
-      ) {
-        square.classList.add("check-king");
-      }
+        whiteKingPos.col === col;
 
-      if (
+      const isBlackCheckedKing =
         blackInCheck &&
         blackKingPos &&
         blackKingPos.row === row &&
-        blackKingPos.col === col
-      ) {
+        blackKingPos.col === col;
+
+      if (isWhiteCheckedKing || isBlackCheckedKing) {
         square.classList.add("check-king");
       }
 
@@ -54,6 +51,7 @@ function renderBoard() {
     }
   }
 }
+
 function isSelectedSquare(row, col) {
   return (
     selectedSquare !== null &&
@@ -61,11 +59,12 @@ function isSelectedSquare(row, col) {
     selectedSquare.col === col
   );
 }
-function isLegalMoveSquare(row, col){
+
+function isLegalMoveSquare(row, col) {
   return legalMoves.some(move => move.row === row && move.col === col);
 }
 
-//INPUT HANDLING
+// INPUT HANDLING
 function handleSquareClick(event) {
   const square = event.currentTarget;
 
@@ -75,11 +74,8 @@ function handleSquareClick(event) {
   const clickedPiece = board[row][col];
   const clickedColor = getPieceColor(clickedPiece);
 
-  console.log("Clicked:", row, col, "piece:", clickedPiece);
-
-  // First click: select one of current player's pieces
   if (selectedSquare === null) {
-    if (clickedPiece !== "" && clickedColor === currentPlayer) {
+    if (!isEmptySquare(clickedPiece) && clickedColor === currentPlayer) {
       selectSquare(row, col);
       renderBoard();
     }
@@ -89,21 +85,18 @@ function handleSquareClick(event) {
   const fromRow = selectedSquare.row;
   const fromCol = selectedSquare.col;
 
-  // Click same square: deselect
-  if (row === fromRow && col === fromCol) {
+  if (isSameSquare(row, col, fromRow, fromCol)) {
     clearSelection();
     renderBoard();
     return;
   }
 
-  // Click another one of your own pieces: switch selection
   if (clickedColor === currentPlayer) {
     selectSquare(row, col);
     renderBoard();
     return;
   }
 
-  // Try move only if legal
   if (!isLegalMove(fromRow, fromCol, row, col)) {
     return;
   }

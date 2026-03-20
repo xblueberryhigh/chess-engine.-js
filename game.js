@@ -1,24 +1,20 @@
-//Apply moves
+// Apply moves
 
 // MOVE
-function playMove(fromRow, fromCol, toRow, toCol){
-  
+function playMove(fromRow, fromCol, toRow, toCol) {
   updateCastlingRights(fromRow, fromCol, toRow, toCol);
   movePiece(fromRow, fromCol, toRow, toCol);
   updateEnPassantState(fromRow, fromCol, toRow, toCol);
+
   evalScore = computeMaterial();
-  console.log(evalScore);
 
   clearSelection();
   switchPlayer();
   renderBoard();
 
-  if (isCheckmate(currentPlayer)) {
-    console.log(`Checkmate! ${currentPlayer} loses.`);
-  } else if (isStalemate(currentPlayer)) {
-    console.log("Stalemate!");
-  }
+  logGameState();
 }
+
 function movePiece(fromRow, fromCol, toRow, toCol) {
   const piece = board[fromRow][fromCol];
   const movingPieceColor = getPieceColor(piece);
@@ -29,58 +25,76 @@ function movePiece(fromRow, fromCol, toRow, toCol) {
     return;
   }
 
-  //En passant
   if (isEnPassantMove(fromRow, fromCol, toRow, toCol)) {
     const capturedPawn = board[enPassantTarget.captureRow][enPassantTarget.captureCol];
 
-    if (capturedPawn !== "") {
+    if (!isEmptySquare(capturedPawn)) {
       storeCapturedPiece(movingPieceColor, capturedPawn);
     }
 
-    board[toRow][toCol] = piece;
-    board[fromRow][fromCol] = "";
-    board[enPassantTarget.captureRow][enPassantTarget.captureCol] = "";
+    relocatePiece(fromRow, fromCol, toRow, toCol);
+    board[enPassantTarget.captureRow][enPassantTarget.captureCol] = EMPTY_SQUARE;
 
-    handlePromotion(toRow, toCol);
+    promoteIfNeeded(toRow, toCol);
     return;
   }
-  // Normal capture
-  if (targetPiece !== "") {
+
+  if (!isEmptySquare(targetPiece)) {
     storeCapturedPiece(movingPieceColor, targetPiece);
   }
 
-  board[toRow][toCol] = piece;
-  board[fromRow][fromCol] = "";
-
-  handlePromotion(toRow, toCol);
+  relocatePiece(fromRow, fromCol, toRow, toCol);
+  promoteIfNeeded(toRow, toCol);
 }
+
 function switchPlayer() {
-  currentPlayer = currentPlayer === "white" ? "black" : "white";
+  currentPlayer = currentPlayer === PLAYERS.WHITE ? PLAYERS.BLACK : PLAYERS.WHITE;
 }
-function handlePromotion(row, col) {
+
+function promoteIfNeeded(row, col) {
   const piece = board[row][col];
+  const color = getPieceColor(piece);
 
-  if (piece === "♙" && row === 0) {
-    board[row][col] = "♕"; // white promotes
+  if (piece === PIECES.WHITE.PAWN && row === PROMOTION_ROW[PLAYERS.WHITE]) {
+    board[row][col] = PIECES.WHITE.QUEEN;
+    return;
   }
 
-  if (piece === "♟" && row === 7) {
-    board[row][col] = "♛"; // black promotes
-  }
-}
-function storeCapturedPiece(movingPieceColor, targetPiece) {
-  if (movingPieceColor === "white") {
-    whiteCaptured.push(targetPiece);
-  } else {
-    blackCaptured.push(targetPiece);
+  if (piece === PIECES.BLACK.PAWN && row === PROMOTION_ROW[PLAYERS.BLACK]) {
+    board[row][col] = PIECES.BLACK.QUEEN;
   }
 }
 
-//SELECTION
+function storeCapturedPiece(movingPieceColor, capturedPiece) {
+  if (movingPieceColor === PLAYERS.WHITE) {
+    whiteCaptured.push(capturedPiece);
+    return;
+  }
+
+  if (movingPieceColor === PLAYERS.BLACK) {
+    blackCaptured.push(capturedPiece);
+  }
+}
+
+function logGameState() {
+  console.log(evalScore);
+
+  if (isCheckmate(currentPlayer)) {
+    console.log(`Checkmate! ${currentPlayer} loses.`);
+    return;
+  }
+
+  if (isStalemate(currentPlayer)) {
+    console.log("Stalemate!");
+  }
+}
+
+// SELECTION
 function selectSquare(row, col) {
   selectedSquare = { row, col };
   legalMoves = getLegalMoves(row, col);
 }
+
 function clearSelection() {
   selectedSquare = null;
   legalMoves = [];
